@@ -73,12 +73,12 @@ spacebelow=\parsep,
 % frontmatter
 \usepackage[affil-it]{authblk}
 
-\title{Paper Template for Writing with Victor}
+\title{Searching for Model Concepts by their Conditional Independencies}
 \date{}
-\author[1]{Albert Einstein}
-\author[1,2]{Pierre Laplace}
-\affil[1]{Physical Insitute of the Beyond}
-\affil[2]{Ouija Statistical Institute}
+\author[1]{David Reber}
+% \author[1,2]{Victor Veitch}
+% \affil[1]{Physical Insitute of the Beyond}
+% \affil[2]{Ouija Statistical Institute}
 
 \begin{document}
 \maketitle
@@ -87,70 +87,38 @@ spacebelow=\parsep,
 Your abstract here
 \end{abstract}
 
-\section{Introduction}
+So far Victor Veitch and Kaarel Hänni have helped brainstorm and soundboard! ChatGPT probably helped a lot with formatting, rephrasing, and catching spelling mistakes. All remaining mistakes are my own.
 
-This is a short document illustrating the hodgepodge of latex commands and style files that Victor uses to write papers.
-The main things are:
-\begin{enumerate}
-\item Use human-readable macros in latex math.
-  
-\begin{verbatim}
-Good: \EE[Y \given X]
-Bad: \mathbb{E}[Y | X]
-\end{verbatim}
-\item Use margin commenting commands (the included ones are due to Daniel M. Roy) to avoid breaking flow of the text w/ comments.
-\item Finished documents should be beautiful.
-\end{enumerate}
+\section{April 25 Victor summary}
+\begin{itemize}
+    \item Assume you have infinite compute and infinite data
+    \item It seems like even then you may not be able to do this search easily, because there are infinite rotations you would need to check (there's no privileged basis).
+    \item The counterpoint is that LLMs seem to be able to also have an understanding of which concepts are conditionally independent: if you assume that knowledge is also represented somewhere in the model, does that buy you the extra constraints you need to narrow down the search space to something that ever terminates?
+\end{itemize}
 
-The most common option for commenting is margin commenting.\fTBD{vv: like this}
-It's also sometimes useful to highly text that \NA{needs attention}.
-Severe issues can be \PROBLEM{flagged as problems}.
-
-\section{Further comments}
-When citing multiple references at once use only a single cite command \cite[e.g,][]{Richardson:Hudgens:Gilbert:Fine:2014, Liu:Kuramoto:Stuart:2013}.
-When using a citation as a noun, as in ``According to \citet{Rosenbaum:2010}, ...'', use \texttt{citet}.
-
-In many venues, its common for proofs of theorems to appear only in an appendix. Using the restatable package makes this much easier. For example:
-\begin{restatable}{theorem}{mooncracker}
-\label{thm:mooncracker}
-Assume that the moon is made of cheese. Then, the moon is tasty with crackers, for all crackers that are non-stale.
-\end{restatable}
-
-The way I handle bibliographies is incompatible with natbib. Accordingly, when modifying this template to work with ML conference templates (e.g., NeurIPS or ICML), use their \texttt{nonatbib} option.
-
-\section{Writing Advice}
-We now transition from latex formatting to some free-form writing and style advice.
-My intention is to eventually significantly update this.
-
-Writing is \emph{extremely important}. The impact of your paper is limited by the ability of your audience to understand it. Your typical reader will be a non-expert with limited attention. Work hard to make your paper accessible and beautiful! For your first papers, the writing may take about as long as the actual research. Neglecting writing quality is the most common failure mode I see among new researchers. 
-\begin{enumerate}
-  \item A good first step for writing is to sketch the full paper in bullet points. Make sure the story is totally clear to you. Explain your paper to a couple of friends to nail down the flow. A partial template for bullet point writing: \url{https://docs.google.com/document/d/1KORmM9VsxY29ssod77e0zfKVlBLSesmauSYD5UyfDo4/edit?usp=sharing}
-  \item Some useful links:
-    \begin{enumerate}
-    \item Writing advice from Don Knuth: \url{https://jmlr.csail.mit.edu/reviewing-papers/knuth_mathematical_writing.pdf}. I strongly recommend at least reading the first 10 pages.
-    \item This tool for identifying overly complex or hard-to-understand sentences: \url{https://hemingwayapp.com/}
-    \item This transfomer-based rewriting tool: \url{https://www.wordtune.com/}
-    \end{enumerate}
-  \item Start writing early! Anticipate needing several full revisions of the paper. These often include large changes. For instance, throwing away entire sections, or adding new experiments. It's easy to miss deadlines, or to end up submitting subpar versions of your paper.   
-\end{enumerate}
-
-
-%\newpage
-\printbibliography
-
-\newpage
-\appendix
-
-% \title{Appendix}
-% \date{\vspace{-5ex}}
-% \maketitle
-
-\section{Proofs}
-Recall that \cref{thm:mooncracker} is provided to illustrate the use of restatable.
-\mooncracker* 
-\begin{proof}
-  This is straightforward from well-known results of Wallace and Gromit. \PROBLEM{missing citation}
-\end{proof}
+\section{Rough Notes from April 25 discussion with Kaarel}
+\begin{itemize}
+    \item Transformer model
+    \item Causal graph has 3 nodes (actually a CI)
+    \item Try all possible variations of 3 places in the residual stream to look at
+    \begin{itemize}
+        \item Both token position and layer: all possible combinations of places
+    \end{itemize}
+    \item Look for a feature in each position, testing whether each feature has the independence you want
+    \item Should be possible to do using a differentiable loss function
+    \begin{itemize}
+        \item If binary concepts are sigmoids of affine transformations of features
+        \item Then loss depends on whether the CI holds in that batch
+        \item KL divergence between product distribution and joint distribution you observe
+        \item Need an empirical variant of the mutual information.
+    \end{itemize}
+    \item Gradient descent is on how to choose 3 positions in the model.
+    \item If there are any other concepts which have the same causal structure, this won't be able to differentiate between them
+    \begin{itemize}
+        \item So we could add a supervised term which matches prompt = "man"
+    \end{itemize}
+    \item If the 3 variables have deterministic value from a given input, then we could train a supervised probe to match the labels I know to the positions in the model.
+\end{itemize}
 
 \end{document}
 
