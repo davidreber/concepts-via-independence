@@ -75,8 +75,10 @@ spacebelow=\parsep,
 
 \title{Searching for Model Concepts by their Conditional Independencies}
 \date{}
-\author[1]{David Reber}
-% \author[1,2]{Victor Veitch}
+\author{TBD}
+% \author[1]{David Reber}
+% \author[1]{Victor Veitch}
+% \author[1,2]{Kaarel Hänni}
 % \affil[1]{Physical Insitute of the Beyond}
 % \affil[2]{Ouija Statistical Institute}
 
@@ -87,18 +89,72 @@ spacebelow=\parsep,
 Your abstract here
 \end{abstract}
 
-So far Victor Veitch and Kaarel Hänni have helped brainstorm and soundboard! ChatGPT probably helped a lot with formatting, rephrasing, and catching spelling mistakes. All remaining mistakes are my own.
+Ongoing attributions:
+\begin{itemize}
+    \item David: articulating connection to his explainability agenda. Writing first draft.
+    \item Kaarel: suggesting the search algorithm
+    \item Victor: suggesting obstacles related to rotations
+    \item AIs: ChatGPT and Copilot
+\end{itemize}
 
-\section{Rough Sketch of the Search Process}
-Assume we have three binary concepts $X$, $Y$, and $Z$ which satisfy the conditional independence of $(X\independent Y|Z)$, and we want to find them in a model. We can do this by searching for a set of three positions in the model which satisfy the conditional independence. 
+\section{Motivation}
+A lot of human understandable concepts have statistical independencies (e.g. because of underlying causal processes). These conditional independencies should help us narrow the search for concepts in a model, in the spirit of the "Discovering Latent Knowledge" paper. [todo: cite]
+
+This research direction is insturmentally valuable to David, because he's focused on context-specific, model-agnostic explainability. But the direction he's going in relies on at least some of the relevant concepts being readable from the model, so if there are easy ways he can help speed that interpretability research, it'll make his particular agenda of explainability more likely to succeed.
+
+\section{Formalizing the problem}
+Assume we have three binary concepts $X$, $Y$, and $Z$ which satisfy the conditional independence of $(X\independent Y|Z)$, and we want to find them in a transformer-based generative model. We can do this by searching for a set of three features in the model which satisfy the conditional independence. 
 
 \subsection{What are we searching over?}
-Let's assume concpets are represented linearly as subspaces of the embedding space, and the $i^{th}$ layer is simply reasoning over these concepts (but not changing the embedding space itself). If this were true, our search is a search over subspaces in the embedding space, and we would need a way to determine which subspaces correspond to which concepts.
+Let's assume concepts are represented linearly as subspaces of the embedding space, and the $i^{th}$ layer is simply reasoning over these concepts (but not changing the embedding space itself). If this is true, \textbf{the way that concepts are represented should be consistent in the embedding space across all layers}. 
 
-(An alternative possibility is there is a different embedding space at each layer; that is, that each layer is a transformation from the previous layer's embedding space to a new embedding space. If this is the case, the subspace corresponding to a concept in one layer may not correspond to the same subspace in the next layer. Additionally, if the transformations are not full-rank then we would expect to see concept collapse, where some concepts are not represented in later embedding spaces at all.)
+% \marginpar{An alternative possibility is there is a different embedding space at each layer; that is, that each layer is a transformation from the previous layer's embedding space to a new embedding space. If this is the case, the subspace corresponding to a concept in one layer may not correspond to the same subspace in the next layer. Additionally, if the transformations are not full-rank then we would expect to see concept collapse, where some concepts are not represented in later embedding spaces at all. But this doesn't match Anthropic's results.}
 
-Here, \emph{position} refers to 
-We can do this by training a probe to predict $X$, $Y$, and $Z$ from the positions in the model, and then searching for a set of three positions which satisfy the conditional independence.
+We can think of the overall search as comprising two parts:
+\begin{itemize}
+    \item Searching over all possible combinations of three subspaces in the embedding space. 
+    \item For each combination, checking whether the conditional independence holds. 
+\end{itemize}
+
+\subsection{Do we need to worry about rotations?}
+
+Another relevant question is whether there is a privileged basis in the embedding space. If there is, then we can search over the basis vectors. If there isn't, then we need to search over all possible rotations of the embedding space.
+
+\marginpar{cite: https://transformer-circuits.pub/2023/privileged-basis/index.html}
+Anthropic's work has provided a bit of evidence that there \textbf{shouldn't be a priveledged basis}. Empirically, there was some evidence that there is anyways, but Anthropic ran some tests and conjecture that it's likely just an artifact of using the Adam optimizer, and not necessary for model performance. So at a first pass, it would seem we need to search over all possible rotations of the embedding space.
+
+If we restrict our search to only the columns of the interaction matrices, what assumptions are we making?
+\begin{itemize}
+    \item There is a one-to-one correspondence between concepts and columns of the interaction matrices. (In particular, there are no concept-directions which are linear combinations of the columns of the interaction matrices, and \emph{superposition} isn't a thing).
+    \item there are no concept-directions corresponding to interactions between layers (read-write operations of later layers building on the read-write operations of earlier layers)
+\end{itemize}
+
+I think the superposition point is the biggest reason we're going to need to worry about rotations. If we assume that superposition is a thing, then we can't assume that the columns of the interaction matrices are concept directions.
+
+\subsection{How do we check conditional independencies?}
+
+Regardless of how we enumerate features, we need to be able to check whether the conditional independencies hold. Naively, we could just check whether the conditional independencies hold for a triplet of features. This is doable for discrete features, but challenging for continuous features [todo: verify]. 
+
+It would be nicer if we could specify a loss function which is minimized when the conditional independencies hold. This would allow us to use gradient descent to find the features which satisfy the conditional independencies.
+
+For instance, perhaps we could use a loss function based on KL divergence between the product distribution and the joint distribution on that batch. 
+
+Maybe specifying a continous loss function also allows us to get around the rotation issue, because the rotation is just another set of parameters to do gradient descent over? So long as it doesn't privledge any particular basis?
+
+\subsection{Differentiating relevant concepts}
+
+Any set of three concepts which satisfy the conditional independencies will be a valid solution to the search problem. So for the type of application David is imagining (finding concepts which are relevant to a particular context/task), we need a way to ensure the concepts we find are relevant to the context/task.
+
+Maybe this can be added to the loss function somehow? For instance, maybe we can add a term to the loss function which is minimized when the concepts are relevant to the context/task (aka. supervised probing).
+
+\subsection{Narrowing the search}
+
+Perhaps trying to satisfy several conditional independencies simultaneously helps narrow the search. Maybe searching for 5 concepts with 4 conditional independencies is easier than searching for 3 concepts with 1 conditional independence?
+
+Alternatively, since LLM's seem to be capable of answering questions about the conditional independnece of concepts, maybe we can leverage their own understanding somehow? This would indicate that they have some sort of representation of conditional independencies, which we could use to narrow the search.
+
+\newpage
+\appendix{}
 
 \section{April 25 Victor summary}
 \begin{itemize}
@@ -107,7 +163,7 @@ We can do this by training a probe to predict $X$, $Y$, and $Z$ from the positio
     \item The counterpoint is that LLMs seem to be able to also have an understanding of which concepts are conditionally independent: if you assume that knowledge is also represented somewhere in the model, does that buy you the extra constraints you need to narrow down the search space to something that ever terminates?
 \end{itemize}
 
-\section{Rough Notes from April 25 discussion with Kaarel}
+\section{April 25 discussion with Kaarel}
 \begin{itemize}
     \item Transformer model
     \item Causal graph has 3 nodes (actually a CI)
