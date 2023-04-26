@@ -89,6 +89,17 @@ Your abstract here
 
 So far Victor Veitch and Kaarel Hänni have helped brainstorm and soundboard! ChatGPT probably helped a lot with formatting, rephrasing, and catching spelling mistakes. All remaining mistakes are my own.
 
+\section{Rough Sketch of the Search Process}
+Assume we have three binary concepts $X$, $Y$, and $Z$ which satisfy the conditional independence of $(X\independent Y|Z)$, and we want to find them in a model. We can do this by searching for a set of three positions in the model which satisfy the conditional independence. 
+
+\subsection{What are we searching over?}
+Let's assume concpets are represented linearly as subspaces of the embedding space, and the $i^{th}$ layer is simply reasoning over these concepts (but not changing the embedding space itself). If this were true, our search is a search over subspaces in the embedding space, and we would need a way to determine which subspaces correspond to which concepts.
+
+(An alternative possibility is there is a different embedding space at each layer; that is, that each layer is a transformation from the previous layer's embedding space to a new embedding space. If this is the case, the subspace corresponding to a concept in one layer may not correspond to the same subspace in the next layer. Additionally, if the transformations are not full-rank then we would expect to see concept collapse, where some concepts are not represented in later embedding spaces at all.)
+
+Here, \emph{position} refers to 
+We can do this by training a probe to predict $X$, $Y$, and $Z$ from the positions in the model, and then searching for a set of three positions which satisfy the conditional independence.
+
 \section{April 25 Victor summary}
 \begin{itemize}
     \item Assume you have infinite compute and infinite data
